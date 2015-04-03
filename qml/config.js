@@ -30,6 +30,14 @@ function getDatabase() {
     return LS.LocalStorage.openDatabaseSync("WHT", "1.0", "StorageDatabase", 100000);
 }
 
+function createDataBaseIfNeeded(tx) {
+    tx.executeSql('CREATE TABLE IF NOT EXISTS hours(uid LONGVARCHAR UNIQUE, date TEXT,startTime TEXT, endTime TEXT, duration REAL,project TEXT, description TEXT, breakDuration REAL DEFAULT 0);');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS timer(uid INTEGER UNIQUE, starttime TEXT, started INTEGER);');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS breaks(id INTEGER PRIMARY KEY, starttime TEXT, started INTEGER, duration REAL DEFAULT -1);');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS projects(id LONGVARCHAR UNIQUE, name TEXT, hourlyRate REAL DEFAULT 0, contractRate REAL DEFAULT 0, budget REAL DEFAULT 0, hourBudget REAL DEFAULT 0, labelColor TEXT);');
+    tx.executeSql('PRAGMA user_version=2;');
+}
+
 //reset database
 function resetDatabase() {
     var db = getDatabase();
@@ -39,11 +47,7 @@ function resetDatabase() {
             tx.executeSql('DROP TABLE timer')
             tx.executeSql('DROP TABLE breaks')
             tx.executeSql('DROP TABLE projects')
-            tx.executeSql('CREATE TABLE IF NOT EXISTS hours(uid LONGVARCHAR UNIQUE, date TEXT, startTime TEXT, endTime TEXT, duration REAL,project TEXT, description TEXT,breakDuration REAL DEFAULT 0);');
-            tx.executeSql('CREATE TABLE IF NOT EXISTS timer(uid INTEGER UNIQUE,starttime TEXT, started INTEGER);');
-            tx.executeSql('CREATE TABLE IF NOT EXISTS breaks(id INTEGER PRIMARY KEY,starttime TEXT, started INTEGER, duration REAL DEFAULT -1);');
-            tx.executeSql('CREATE TABLE IF NOT EXISTS projects(id LONGVARCHAR UNIQUE, name TEXT, hourlyRate REAL DEFAULT 0, contractRate REAL DEFAULT 0, budget REAL DEFAULT 0, hourBudget REAL DEFAULT 0, labelColor TEXT);');
-            tx.executeSql('PRAGMA user_version=2;');
+            createDataBaseIfNeeded(tx);
             console.log("Database reset");
         });
 }
@@ -64,14 +68,11 @@ function getUniqueId()
 function initialize() {
     var db = getDatabase();
     db.transaction(
-        function(tx){
-            tx.executeSql('CREATE TABLE IF NOT EXISTS hours(uid LONGVARCHAR UNIQUE, date TEXT,startTime TEXT, endTime TEXT, duration REAL,project TEXT, description TEXT, breakDuration REAL DEFAULT 0);');
-            tx.executeSql('CREATE TABLE IF NOT EXISTS timer(uid INTEGER UNIQUE, starttime TEXT, started INTEGER);');
-            tx.executeSql('CREATE TABLE IF NOT EXISTS breaks(id INTEGER PRIMARY KEY, starttime TEXT, started INTEGER, duration REAL DEFAULT -1);');
-            tx.executeSql('CREATE TABLE IF NOT EXISTS projects(id LONGVARCHAR UNIQUE, name TEXT, hourlyRate REAL DEFAULT 0, contractRate REAL DEFAULT 0, budget REAL DEFAULT 0, hourBudget REAL DEFAULT 0, labelColor TEXT);');
-            tx.executeSql('PRAGMA user_version=2;');
-    });
+        function(tx) {
+            createDataBaseIfNeeded(tx);
+        });
 }
+
 function updateIfNeeded () {
     var db = getDatabase();
     db.transaction(

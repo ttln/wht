@@ -101,6 +101,42 @@ function updateIfNeeded () {
     });
 }
 
+/** Converts from a database hour record. **/
+function fromDbHour(dbHour) {
+
+    var hour = {};
+
+    //uid,date,duration,project,description
+    hour["uid"] = dbHour.uid;
+    hour["date"]= dbHour.date;
+    //console.log(hour["date"]);
+    hour["startTime"] = dbHour.startTime;
+    hour["endTime"] = dbHour.endTime;
+    hour["duration"] = dbHour.duration;
+    hour["project"] = dbHour.project;
+    hour["description"] = dbHour.description;
+    hour["breakDuration"] = dbHour.breakDuration;
+
+    return hour;
+}
+
+/**
+ * Converts from an array of database hours records.
+ * @param {Array}
+ * @returns {Array}
+ */
+function fromDbHoursArray(dbHoursArray) {
+
+    var hours = [];
+
+    for (var i = 0; i < dbHoursArray.length; i++) {
+        var dbHour = dbHoursArray[i];
+        hours.push(fromDbHour(dbHour));
+    }
+
+    return hours;
+}
+
 // This function is used to write hours into the database
 function setHours(uid,date,startTime, endTime, duration, project, description, breakDuration) {
     console.log(date)
@@ -346,21 +382,7 @@ function getAllWeek(offset, sortby, projectId) {
                 rs = tx.executeSql('SELECT * FROM hours WHERE date BETWEEN strftime("%Y-%m-%d", "now","localtime", "weekday 0", "-13 days") AND strftime("%Y-%m-%d", "now", "localtime", "weekday 0", "-7 days") ' + orderby + ';');
         }
 
-        for (var i = 0; i < rs.rows.length; i++) {
-            var item ={};
-            //uid,date,duration,project,description
-            item["uid"]=rs.rows.item(i).uid;
-            item["date"]= rs.rows.item(i).date;
-            //console.log(item["date"]);
-            item["startTime"]=rs.rows.item(i).startTime;
-            item["endTime"]=rs.rows.item(i).endTime;
-            item["duration"]=rs.rows.item(i).duration;
-            item["project"]=rs.rows.item(i).project;
-            item["description"]=rs.rows.item(i).description;
-            item["breakDuration"]= rs.rows.item(i).breakDuration;
-            allHours.push(item);
-           //console.log(item);
-        }
+        allHours = fromDbHoursArray(rs.rows);
     })
     return allHours;
 }
@@ -387,21 +409,7 @@ function getAllMonth(offset, sortby, projectId) {
                 rs = tx.executeSql('SELECT * FROM hours WHERE date BETWEEN strftime("%Y-%m-%d", "now", "localtime", "start of month", "-1 month") AND strftime("%Y-%m-%d", "now", "localtime", "start of month", "-1 day") ' + orderby + ';');
         }
 
-        for (var i = 0; i < rs.rows.length; i++) {
-            var item ={};
-            //uid,date,duration,project,description
-            item["uid"]=rs.rows.item(i).uid;
-            item["date"]= rs.rows.item(i).date;
-            //console.log(item["date"]);
-            item["startTime"]=rs.rows.item(i).startTime;
-            item["endTime"]=rs.rows.item(i).endTime;
-            item["duration"]=rs.rows.item(i).duration;
-            item["project"]=rs.rows.item(i).project;
-            item["description"]=rs.rows.item(i).description;
-            item["breakDuration"]= rs.rows.item(i).breakDuration;
-            allHours.push(item);
-           //console.log(item);
-        }
+        allHours = fromDbHoursArray(rs.rows);
     })
     return allHours;
 }
@@ -419,20 +427,8 @@ function getAllThisYear(sortby, projectId) {
             rs = tx.executeSql('SELECT * FROM hours WHERE date BETWEEN strftime("%Y-%m-%d", "now","localtime" , "start of year") AND strftime("%Y-%m-%d", "now", "localtime") AND project=? ' + orderby + ';', [projectId]);
         else
             rs = tx.executeSql('SELECT * FROM hours WHERE date BETWEEN strftime("%Y-%m-%d", "now","localtime" , "start of year") AND strftime("%Y-%m-%d", "now", "localtime") ' + orderby + ';');
-        for (var i = 0; i < rs.rows.length; i++) {
-             var item ={};
-             //uid,date,duration,project,description
-             item["uid"]=rs.rows.item(i).uid;
-             item["date"]= rs.rows.item(i).date;
-             item["startTime"]=rs.rows.item(i).startTime;
-             item["endTime"]=rs.rows.item(i).endTime;
-             item["duration"]=rs.rows.item(i).duration;
-             item["project"]=rs.rows.item(i).project;
-             item["description"]=rs.rows.item(i).description;
-             item["breakDuration"]= rs.rows.item(i).breakDuration;
-             allHours.push(item);
-            //console.log(item);
-        }
+
+        allHours = fromDbHoursArray(rs.rows);
     })
     return allHours;
 }
@@ -634,6 +630,41 @@ function clearBreakTimer(){
 These functions are for projects */
 
 /* */
+
+/** Converts from a database project record. **/
+function fromDbProject(dbProject) {
+
+    var project = {};
+
+    project["id"]= dbProject.id;
+    project["name"]= dbProject.name;
+    project["hourlyRate"]= dbProject.hourlyRate;
+    project["contractRate"]= dbProject.contractRate;
+    project["budget"]= dbProject.budget;
+    project["hourBudget"]= dbProject.hourBudget;
+    project["labelColor"]= dbProject.labelColor;
+    project["breakDuration"]= dbProject.breakDuration;
+
+    return project;
+}
+
+/**
+ * Converts from an array of database projects records.
+ * @param {Array}
+ * @returns {Array}
+ */
+function fromDbProjectsArray(dbProjectsArray) {
+
+    var projects = [];
+
+    for (var i = 0; i < dbProjectsArray.length; i++) {
+        var dbProject = dbProjectsArray[i];
+        projects.push(fromDbProject(dbProject));
+    }
+
+    return projects;
+}
+
 function setProject(id, name, hourlyRate, contractRate, budget, hourBudget, labelColor){
     console.log(id, name, hourlyRate, contractRate, budget, hourBudget, labelColor);
     var db = getDatabase();
@@ -659,18 +690,7 @@ function getProjects(){
     db.transaction(function(tx) {
         var rs = tx.executeSql('SELECT * FROM projects ORDER BY id DESC');
         if(rs.rows.length > 0) {
-            for (var i=0; i<rs.rows.length; i++) {
-                var item ={};
-                item["id"]=rs.rows.item(i).id;
-                item["name"]= rs.rows.item(i).name;
-                item["hourlyRate"]=rs.rows.item(i).hourlyRate;
-                item["contractRate"]=rs.rows.item(i).contractRate;
-                item["budget"]=rs.rows.item(i).budget;
-                item["hourBudget"]=rs.rows.item(i).hourBudget;
-                item["labelColor"]=rs.rows.item(i).labelColor;
-                item["breakDuration"]= rs.rows.item(i).breakDuration;
-                resp.push(item);
-            }
+            resp = fromDbProjectsArray(rs.rows);
         }
     })
     return resp;
@@ -679,21 +699,11 @@ function getProjects(){
 /* Get project by id */
 function getProjectById(id){
     var db = getDatabase();
-    var item ={};
+    var item = null;
     db.transaction(function(tx) {
         var rs = tx.executeSql('SELECT * FROM projects WHERE id=?;', [id]);
         if(rs.rows.length > 0) {
-            for (var i=0; i<rs.rows.length; i++) {
-                item["id"]=rs.rows.item(i).id;
-                item["name"]= rs.rows.item(i).name;
-                item["hourlyRate"]=rs.rows.item(i).hourlyRate;
-                item["contractRate"]=rs.rows.item(i).contractRate;
-                item["budget"]=rs.rows.item(i).budget;
-                item["hourBudget"]=rs.rows.item(i).hourBudget;
-                item["labelColor"]=rs.rows.item(i).labelColor;
-                item["breakDuration"]= rs.rows.item(i).breakDuration;
-                break;
-            }
+            item = fromDbProject(rs.rows[0]);
         }
     })
     return item;
